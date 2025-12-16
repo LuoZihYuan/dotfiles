@@ -50,28 +50,30 @@ fi
 
 
 ############################################################
-# Python: pyenv
+# Python
 ############################################################
+# pyenv
 export PYENV_ROOT="$HOME/.pyenv"
 export PYENV_VIRTUALENV_DISABLE_PROMPT=1
 if [[ -d "$PYENV_ROOT/bin" ]]; then
-  # Prepend pyenv shims/bin
   typeset -U path
   path=("$PYENV_ROOT/bin" $path)
 fi
 
 if command -v pyenv >/dev/null 2>&1; then
   eval "$(pyenv init - zsh)"
-  # pyenv-virtualenv (if installed)
   if command -v pyenv-virtualenv-init >/dev/null 2>&1; then
     eval "$(pyenv virtualenv-init -)"
   fi
 fi
 
+# uv
+if command -v uv >/dev/null 2>&1; then
+  eval "$(uv generate-shell-completion zsh)"
+  eval "$(uvx --generate-shell-completion zsh)"
+fi
 
-############################################################
-# Conda (managed by `conda init` — left intact)
-############################################################
+# conda (managed by `conda init` — left intact)
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
 __conda_setup="$('/opt/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
@@ -89,29 +91,35 @@ unset __conda_setup
 
 
 ############################################################
-# Node.js: nvm (Homebrew)
+# Node.js
 ############################################################
+# nvm (Homebrew)
 export NVM_DIR="$HOME/.nvm"
-# Load nvm and its completion if present
 [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && . "/opt/homebrew/opt/nvm/nvm.sh"
 [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && . "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
 
-
-############################################################
 # pnpm completion
-############################################################
-# Only source if the completion file exists/readable
 [[ -r "$HOME/completion-for-pnpm.zsh" ]] && source "$HOME/completion-for-pnpm.zsh"
 
 
 ############################################################
-# PATH additions (libpq, Go bin)
+# PATH additions
 ############################################################
 typeset -U path
+
+# OpenJDK from Homebrew
+if [[ -d "/opt/homebrew/opt/openjdk/bin" ]]; then
+  path=("/opt/homebrew/opt/openjdk/bin" $path)
+fi
 
 # libpq from Homebrew
 if [[ -d "/opt/homebrew/opt/libpq/bin" ]]; then
   path=("/opt/homebrew/opt/libpq/bin" $path)
+fi
+
+# mysql-client from Homebrew
+if [[ -d "/opt/homebrew/opt/mysql-client/bin" ]]; then
+  path=("/opt/homebrew/opt/mysql-client/bin" $path)
 fi
 
 # Go bin (respects GOBIN, else GOPATH/bin)

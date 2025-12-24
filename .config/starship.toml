@@ -23,7 +23,6 @@ $character\
 
 right_format = """
 $golang\
-$python\
 ${custom.python_env}\
 $nodejs\
 $c\
@@ -64,7 +63,7 @@ truncation_symbol = "…/"
 read_only = " 󰌾"
 style = "bg:color_cell_first fg:color_text"
 read_only_style = "bg:color_cell_first fg:color_warning"
-format = "[$read_only]($read_only_style)[ $path ]($style)"
+format = '[$read_only]($read_only_style)[ $path ]($style)'
 
 [git_branch]
 symbol = ""
@@ -87,20 +86,20 @@ symbol = " "
 [cmd_duration]
 show_milliseconds = true
 style = "fg:color_info"
-format = "[󰜎 $duration]($style)"
+format = '[󰜎 $duration]($style)'
 
 [time]
 disabled = false
 time_format = "%R"
 utc_time_offset = "local"
 style = "italic fg:color_text"
-format = "[  $time]($style)"
+format = '[  $time]($style)'
 
 [sudo]
 disabled = false
-style = 'bold fg:color_warning'
-symbol = ''
-format = "[$symbol ]($style)"
+style = "bold fg:color_warning"
+symbol = ""
+format = '[$symbol ]($style)'
 
 [character]
 success_symbol = "[❯](bold color_text)"
@@ -112,48 +111,74 @@ error_symbol = "[❯](bold color_error)"
 detect_extensions = ['c', 'h', 'cpp', 'hpp']
 symbol = ""
 style = "fg:color_text"
-format = ' [$symbol $version \($name\)]($style)'
+format = '[ $symbol $version \($name\)]($style)'
 
 [nodejs]
 symbol = ""
 style = "fg:color_text"
 format = '[ $symbol $version]($style)'
 
-[python]
-symbol = ""
-style = "fg:color_text"
-format = " [$symbol $version]($style)"
-
 [custom.python_env]
 detect_extensions = ['py', 'ipynb']
 detect_files = ['.python-version', 'Pipfile', '__init__.py', 'pyproject.toml', 'requirements.txt', 'setup.py', 'tox.ini']
+symbol = ""
 command = '''
-if command -v python >/dev/null 2>&1; then
-    PYTHON_PATH=$(which python)
-    
-    # Check if it's a conda environment
-    if [[ "$PYTHON_PATH" == *"/envs/"* ]]; then
-        ENV_NAME=$(echo "$PYTHON_PATH" | sed -E 's|.*/envs/([^/]+)/.*|\1|')
-        echo "-$ENV_NAME"
-    # Check if it's in a conda base
-    elif [[ "$PYTHON_PATH" == *"/miniconda"* ]] || [[ "$PYTHON_PATH" == *"/anaconda"* ]]; then
-        echo "-base"
-    # Check if it's a virtualenv (has activate script nearby)
-    elif [[ -f "$(dirname $(dirname "$PYTHON_PATH"))/bin/activate" ]] || [[ -n "$VIRTUAL_ENV" ]]; then
-        echo "-$(basename "$(dirname $(dirname "$PYTHON_PATH"))")"
-    # Check if it's pyenv (bare version install)
-    elif [[ "$PYTHON_PATH" == *"/.pyenv/versions/"* ]]; then
-        echo "-pyenv"
-    # Otherwise it's system Python
+PYTHON_PATH=$(which python 2>/dev/null)
+[[ -z "$PYTHON_PATH" ]] && exit 0
+get_version() {
+    if [[ "$1" == *"/.pyenv/shims/"* ]]; then
+        python --version 2>/dev/null | cut -d" " -f2
     else
-        echo "-system"
+        "$1" --version 2>/dev/null | cut -d" " -f2
     fi
+}
+# uv/poetry project
+if [[ -f "uv.lock" ]] || [[ -f "poetry.lock" ]]; then
+    TOOL=$([[ -f "uv.lock" ]] && echo "uv" || echo "poetry")
+    if [[ "$PYTHON_PATH" == *"/.venv/"* ]] || [[ "$PYTHON_PATH" == *"/.cache/pypoetry/"* ]]; then
+        echo " $(get_version "$PYTHON_PATH")-$TOOL"
+    elif [[ -f ".venv/bin/python" ]]; then
+        echo " $(get_version ".venv/bin/python")-$TOOL*"
+    fi
+    exit 0
+fi
+# conda
+if [[ "$PYTHON_PATH" == *"/envs/"* ]]; then
+    VERSION=$(get_version "$PYTHON_PATH")
+    ENV_NAME=$(echo "$PYTHON_PATH" | sed -E 's|.*/envs/([^/]+)/.*|\1|')
+    echo " $VERSION-conda:$ENV_NAME"
+    exit 0
+fi
+if [[ "$PYTHON_PATH" == *"/miniconda"* ]] || [[ "$PYTHON_PATH" == *"/anaconda"* ]]; then
+    echo " $(get_version "$PYTHON_PATH")-conda:base"
+    exit 0
+fi
+# pyenv
+if [[ "$PYTHON_PATH" == *"/.pyenv/"* ]]; then
+    VERSION=$(get_version "$PYTHON_PATH")
+    if [[ -f "$(dirname $(dirname "$PYTHON_PATH"))/bin/activate" ]]; then
+        ENV_NAME=$(basename "$(dirname $(dirname "$PYTHON_PATH"))")
+        echo " $VERSION-pyenv:$ENV_NAME"
+    else
+        echo " $VERSION-pyenv"
+    fi
+    exit 0
+fi
+# homebrew
+if [[ "$PYTHON_PATH" == *"/homebrew/"* ]] || [[ "$PYTHON_PATH" == *"/opt/homebrew/"* ]]; then
+    echo " $(get_version "$PYTHON_PATH")-brew"
+    exit 0
+fi
+# system
+if [[ "$PYTHON_PATH" == "/usr/bin/python"* ]]; then
+    echo " $(get_version "$PYTHON_PATH")-system"
+    exit 0
 fi
 '''
 style = "fg:color_text"
-format = '[$output]($style)'
+format = '[ $symbol $output]($style)'
 
 [golang]
 symbol = ""
 style = "fg:color_text"
-format = " [$symbol $version]($style)"
+format = '[ $symbol $version]($style)'

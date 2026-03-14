@@ -2,6 +2,7 @@
 # Environment Variables
 ############################################################
 export GPG_TTY=$(tty)
+typeset -U path
 
 
 ############################################################
@@ -56,7 +57,6 @@ fi
 export PYENV_ROOT="$HOME/.pyenv"
 export PYENV_VIRTUALENV_DISABLE_PROMPT=1
 if [[ -d "$PYENV_ROOT/bin" ]]; then
-  typeset -U path
   path=("$PYENV_ROOT/bin" $path)
 fi
 
@@ -103,15 +103,17 @@ export NVM_DIR="$HOME/.nvm"
 
 
 ############################################################
-# PATH additions
+# Java
 ############################################################
-typeset -U path
-
-# OpenJDK from Homebrew
-if [[ -d "/opt/homebrew/opt/openjdk/bin" ]]; then
-  path=("/opt/homebrew/opt/openjdk/bin" $path)
+if [[ -d "/opt/homebrew/opt/openjdk" ]]; then
+  export JAVA_HOME="/opt/homebrew/opt/openjdk"
+  path=("$JAVA_HOME/bin" $path)
 fi
 
+
+############################################################
+# PATH
+############################################################
 # libpq from Homebrew
 if [[ -d "/opt/homebrew/opt/libpq/bin" ]]; then
   path=("/opt/homebrew/opt/libpq/bin" $path)

@@ -142,7 +142,5 @@ fi
 ############################################################
 # Personal Projects
 ############################################################
-autoload -U bashcompinit && bashcompinit
-
 # Gmail Scripts
-[[ -f "$HOME/path/to/gmail-scripts/completions.sh" ]] && source "$HOME/path/to/gmail-scripts/completions.sh"
+[[ -f "$HOME/Developer/gmail-scripts/completions.sh" ]] && source "$HOME/Developer/gmail-scripts/completions.sh"

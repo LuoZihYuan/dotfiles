@@ -138,3 +138,11 @@ if command -v go >/dev/null 2>&1; then
   [[ -d "$_gobin" ]] && path=("$_gobin" $path)
   unset _gobin
 fi
+
+############################################################
+# Personal Projects
+############################################################
+autoload -U bashcompinit && bashcompinit
+
+# Gmail Scripts
+[[ -f "$HOME/path/to/gmail-scripts/completions.sh" ]] && source "$HOME/path/to/gmail-scripts/completions.sh"

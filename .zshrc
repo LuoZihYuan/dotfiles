@@ -40,6 +40,8 @@ zstyle ':conda_zsh_completion:*' show-global-envs-first true
 
 # Initialize completion system (ignore insecure dir warnings)
 compinit -i
+# bash-compat layer (framework; enables bash-style `complete` for tools below)
+autoload -U +X bashcompinit && bashcompinit
 
 
 ############################################################
@@ -115,6 +117,15 @@ esac
 if [[ -d "/opt/homebrew/opt/openjdk" ]]; then
   export JAVA_HOME="/opt/homebrew/opt/openjdk"
   path=("$JAVA_HOME/bin" $path)
+fi
+
+
+############################################################
+# Infrastructure
+############################################################
+# Terraform completion
+if command -v terraform >/dev/null 2>&1; then
+  complete -o nospace -C /opt/homebrew/bin/terraform terraform
 fi
 
 

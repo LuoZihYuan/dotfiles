@@ -1,19 +1,26 @@
-############################################################
-# Environment Variables
-############################################################
+#───────────────────────────────────────────────────────────────────────────────
+#  HOW TO ORGANIZE THIS FILE
+#  - Group by tool/concern: each language its own section;
+#    other tools by category (Databases, Infrastructure).
+#  - Keep a tool's env, PATH, and completion TOGETHER in its
+#    section. Don't centralize completion — it's per-tool.
+#  - Above the marker = load-order-sensitive, keep first.
+#    Below = reorderable, sorted low-churn -> high-churn.
+#  - Hard rule: anything using completion must come AFTER
+#    the Completion section (compinit must run first).
+#───────────────────────────────────────────────────────────────────────────────
+
+
+#── Environment Variables ──────────────────────────────────────────────────────
 export GPG_TTY=$(tty)
 typeset -U path
 
 
-############################################################
-# Aliases
-############################################################
+#── Aliases ────────────────────────────────────────────────────────────────────
 alias rm="rm -i"   # Safer remove: ask before deleting
 
 
-############################################################
-# Completion (case-insensitive, cached, custom fpath)
-############################################################
+#── Completion (case-insensitive, cached, custom fpath) ────────────────────────
 # Keep fpath unique and prepend your custom completion dirs if they exist.
 typeset -U fpath
 for _dir in "$HOME/.docker/completions" "$HOME/.zfunc" "$HOME/Developer/Tools"; do
@@ -32,29 +39,58 @@ zstyle ':completion::complete:*' cache-path "$ZSH_COMPLETION_CACHE"
 # Case-insensitive matching for completion
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 
-# Conda plugin completion preferences
-zstyle ':conda_zsh_completion:*' use-groups true
-zstyle ':conda_zsh_completion:*' show-unnamed true
-zstyle ':conda_zsh_completion:*' sort-envs-by-time true
-zstyle ':conda_zsh_completion:*' show-global-envs-first true
-
 # Initialize completion system (ignore insecure dir warnings)
 compinit -i
 # bash-compat layer (framework; enables bash-style `complete` for tools below)
 autoload -U +X bashcompinit && bashcompinit
 
 
-############################################################
-# Prompt: Starship
-############################################################
+#── Prompt: Starship ───────────────────────────────────────────────────────────
 if command -v starship >/dev/null 2>&1; then
   eval "$(starship init zsh)"
 fi
 
 
-############################################################
-# Python
-############################################################
+#━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  Above: load-order-sensitive, keep first. Below: reorderable.
+#━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+#── Go ─────────────────────────────────────────────────────────────────────────
+# Go bin (respects GOBIN, else GOPATH/bin)
+if command -v go >/dev/null 2>&1; then
+  _gobin="$(go env GOBIN)"
+  [[ -z "$_gobin" ]] && _gobin="$(go env GOPATH)/bin"
+  [[ -d "$_gobin" ]] && path=("$_gobin" $path)
+  unset _gobin
+fi
+
+
+#── Java ───────────────────────────────────────────────────────────────────────
+if [[ -d "/opt/homebrew/opt/openjdk" ]]; then
+  export JAVA_HOME="/opt/homebrew/opt/openjdk"
+  path=("$JAVA_HOME/bin" $path)
+fi
+
+
+#── Node.js ────────────────────────────────────────────────────────────────────
+# nvm (Homebrew)
+export NVM_DIR="$HOME/.nvm"
+[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && . "/opt/homebrew/opt/nvm/nvm.sh"
+[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && . "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
+
+# pnpm
+export PNPM_HOME="/Users/luozihyuan/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+
+# pnpm completion
+[[ -r "$HOME/completion-for-pnpm.zsh" ]] && source "$HOME/completion-for-pnpm.zsh"
+
+
+#── Python ─────────────────────────────────────────────────────────────────────
 # pyenv
 export PYENV_ROOT="$HOME/.pyenv"
 export PYENV_VIRTUALENV_DISABLE_PROMPT=1
@@ -91,47 +127,14 @@ fi
 unset __conda_setup
 # <<< conda initialize <<<
 
-
-############################################################
-# Node.js
-############################################################
-# nvm (Homebrew)
-export NVM_DIR="$HOME/.nvm"
-[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && . "/opt/homebrew/opt/nvm/nvm.sh"
-[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && . "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
-
-# pnpm
-export PNPM_HOME="/Users/luozihyuan/Library/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
-
-# pnpm completion
-[[ -r "$HOME/completion-for-pnpm.zsh" ]] && source "$HOME/completion-for-pnpm.zsh"
+# conda completion preferences (zsh plugin)
+zstyle ':conda_zsh_completion:*' use-groups true
+zstyle ':conda_zsh_completion:*' show-unnamed true
+zstyle ':conda_zsh_completion:*' sort-envs-by-time true
+zstyle ':conda_zsh_completion:*' show-global-envs-first true
 
 
-############################################################
-# Java
-############################################################
-if [[ -d "/opt/homebrew/opt/openjdk" ]]; then
-  export JAVA_HOME="/opt/homebrew/opt/openjdk"
-  path=("$JAVA_HOME/bin" $path)
-fi
-
-
-############################################################
-# Infrastructure
-############################################################
-# Terraform completion
-if command -v terraform >/dev/null 2>&1; then
-  complete -o nospace -C /opt/homebrew/bin/terraform terraform
-fi
-
-
-############################################################
-# PATH
-############################################################
+#── Databases ──────────────────────────────────────────────────────────────────
 # libpq from Homebrew
 if [[ -d "/opt/homebrew/opt/libpq/bin" ]]; then
   path=("/opt/homebrew/opt/libpq/bin" $path)
@@ -142,16 +145,14 @@ if [[ -d "/opt/homebrew/opt/mysql-client/bin" ]]; then
   path=("/opt/homebrew/opt/mysql-client/bin" $path)
 fi
 
-# Go bin (respects GOBIN, else GOPATH/bin)
-if command -v go >/dev/null 2>&1; then
-  _gobin="$(go env GOBIN)"
-  [[ -z "$_gobin" ]] && _gobin="$(go env GOPATH)/bin"
-  [[ -d "$_gobin" ]] && path=("$_gobin" $path)
-  unset _gobin
+
+#── Infrastructure ─────────────────────────────────────────────────────────────
+# Terraform completion
+if command -v terraform >/dev/null 2>&1; then
+  complete -o nospace -C /opt/homebrew/bin/terraform terraform
 fi
 
-############################################################
-# Personal Projects
-############################################################
+
+#── Personal Projects ──────────────────────────────────────────────────────────
 # Gmail Scripts
 [[ -f "$HOME/Developer/gmail-scripts/completions.sh" ]] && source "$HOME/Developer/gmail-scripts/completions.sh"
